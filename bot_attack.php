@@ -1,4 +1,4 @@
-?php
+<?php
 include("funcs2.php");
 
 $getgames = mysql_query("SELECT round,speed,maxbuild,type,starts,ends FROM games WHERE starts<$time AND ends>$time ORDER BY round ASC;");
