@@ -1,4 +1,4 @@
-<?php
+<<?php
 include("funcs2.php");
 function gameBotHireDus($trn)
 	{
@@ -54,26 +54,29 @@ function gameHire($round, $account, $trn, $type)
 	    if($type==2){ $sql.="hitmen=hitmen+$valuedus, punks=punks+$valueops, ak47=ak47+$valuedus, ";}
         if($type==3){ $sql.="hustlers=hustlers+$valueops, bootleggers=bootleggers+$valuedus, ";}
         if($type==4){ $sql.="bodyguards=bodyguards+$valueops, thug=thug+$valuedus, ak47=ak47+($valueops+$valuedus), ";}
-	    if($type>0){$sql.="trn=trn-$trn, "; }else{ $sql.="bot_build=4, "; }
-	    $sql.="online=".time().", bot_hire=".time()." ";
-	    $sql.="WHERE id=$account";
+	    if($type>0){$sql.="trn=trn-$trn, bot_hire=".time().", "; }else{ $sql.="bot_build=4, "; }
+	    $sql.="online=".time()." WHERE id=$account";
 	    mysql_query($sql) or die(mysql_error());
 	}
 	
-function InsertBots($pimpname, $round, $username, $password, $code, $status, $reserves, $maxbuild, $city, $begins, $team, $flag)
+function joinGame($pimpname, $round, $username, $password, $code, $status, $reserves, $maxbuild, $city, $begins, $team, $flag)
 	{
-	    mysql_query("INSERT INTO r".$round."_pimp (pimp,user,pass,trn,city,online,code,status,res,team,flag) VALUES ('$pimpname','$username','$password','$maxbuild','$city','$begins','$code','$status','$reserves','$team','$flag');");
-		mysql_query("INSERT INTO stats (user,round) VALUES ('$username','$round');");
+	    mysql_query("INSERT INTO r".$round."_pimp (pimp,user,pass,trn,city,online,code,status,res,team,flag) VALUES ('$pimpname','$username','$password','$maxbuild','$city','$begins','$code','$status','$reserves','$team','$flag');") or die(mysql_error());
+		mysql_query("INSERT INTO stats (user,round) VALUES ('$username','$round');") or die(mysql_error());
 	}
 	
+
 function createCity($round, $name)
     {
         mysql_query("INSERT INTO r".$round."_city (name) VALUES ('$name');");
     }
 
-function createCrew($round, $cartel_name, $crewowner)
+function createCrew($round, $crewAllow)
     {
-         mysql_query("INSERT INTO r".$round."_crew (name,founder,city,members,invites) VALUES ('$cartel_name','$crewowner','1','1','11');") or die(mysql_error());
+        $ccreate = mysql_query("SELECT name,id FROM `crewnames` LIMIT $crewAllow;");
+        while ($crew_name = mysql_fetch_array($ccreate)){
+        mysql_query("INSERT INTO r".$round."_crew (name,founder,city,members,invites) VALUES ('$crew_name[0]','$crew_name[id]','1','1','11');") or die(mysql_error());
+        }
     }
 function crewMember($round, $crewid, $userid)
     {
@@ -85,7 +88,17 @@ function crewFounder($round, $crewid, $userid, $foundername)
         mysql_query("UPDATE r".$round."_crew SET founder='$foundername' WHERE id='$crewid'") or die(mysql_error());
         mysql_query("UPDATE r".$round."_pimp SET crew='$crewid', cartelrank='1', cartelpower='1' WHERE id='$userid'") or die(mysql_error());
     }
-    
+function joinCrews($round){
+        $userid = mysql_fetch_array(mysql_query("SELECT id,pimp FROM r".$round."_pimp ORDER BY id DESC LIMIT 1"));
+        $crewid_findFounder = mysql_fetch_array(mysql_query("SELECT id,founder FROM r".$round."_crew WHERE founder='$userid[0]'"));
+        $crewid_find = mysql_fetch_array(mysql_query("SELECT id,founder FROM r".$round."_crew WHERE members<10"));
+        if($crewid_findFounder[1]==$userid[0]){
+            crewFounder($round, $crewid_findFounder[0], $userid[0], $userid[1]);
+                
+        }else{
+            crewMember($round, $crewid_find[0], $userid[0]); 
+        }
+}    
 function creditRewards($username, $code, $reward, $round, $description, $time)
 	{
 	    mysql_query("INSERT INTO rewards (user,code,credits,round,description,time) VALUES ('$username','$code','$reward','$round', '$description','$time');") or die(mysql_error());
