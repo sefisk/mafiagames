@@ -101,45 +101,30 @@ if((($time > $last_mini[1]+259200) AND ($last_mini[0]>0)) || ($time > $find_roun
     mysql_query("INSERT INTO `games` (type,speed,maxbuild,reserves,credits,crewmax,starts,ends,jackpot,gamename,respacks,sjpot,bankdeposits,status,protection,reslimit) VALUES ('$type','$speed','$maxbuild','$reserves','$addon','$crewmax','$begins','$ends','$winnings','$gamename','$respacks','$sjpot','$bankdeposits','$gstatus','$protection','$lsres');") or die(mysql_error());
     $round = mysql_fetch_array(mysql_query("SELECT round FROM `games` ORDER BY round DESC LIMIT 1"));
     mkdir("./images/avi/$round[0]", 0755);
-    //enter new round tables in database automatically
     include("noadmin/install2.php");
-    //Insert Admins to game
-    echo "hello";
-        $get_user = mysql_query("SELECT status,code,username,subscribe,password,pimpname FROM `users` WHERE status='admin';");
-        while ($user = mysql_fetch_array($get_user)){
-            $city = rand(1,3);
-            InsertBots($user[pimpname], $round[0], $user[username], $user[password], $user[code], $user[status], $reserves, $maxbuild, $city, $begins, $team, $flag);
-            echo "hello";
-        }
-        echo "hello2";
-        //Insert Bots to game
-        $allowedBots = 150;
-        $crewAllow = round($allowedBots/$crewmax);
-        $ccreate = mysql_query("SELECT name,id FROM `crewnames` LIMIT $crewAllow;");
-        while ($crew_name = mysql_fetch_array($ccreate)){
-            createCrew($round[0], $crew_name[0], $crew_name[id]);
-            
-        } 
         
-        $get_user = mysql_query("SELECT status,code,username,subscribe,password,pimpname FROM `users` WHERE status='bot' LIMIT $allowedBots;");
+
+        
+        //Create Crews for bots
+        $crewAllow = round(150/$crewmax);
+        createCrew($round[0], $crewAllow);
+        
+        //Insert bots into game
+        $get_user = mysql_query("SELECT status,code,username,subscribe,password,pimpname FROM `users` WHERE status='bot' LIMIT 150;");
         while ($user = mysql_fetch_array($get_user)){
             $team = 0; $flag = 0; $city = rand(1,3);
-            InsertBots($user[pimpname], $round[0], $user[username], $user[password], $user[code], $user[status], $reserves, $maxbuild, $city, $begins, $team, $flag);
-            $userid = mysql_fetch_array(mysql_query("SELECT id,pimp FROM r".$round[0]."_pimp ORDER BY id DESC LIMIT 1"));
-            $crewid_findFounder = mysql_fetch_array(mysql_query("SELECT id,founder FROM r".$round[0]."_crew WHERE founder='$userid[0]'"));
-            $crewid_find = mysql_fetch_array(mysql_query("SELECT id,founder FROM r".$round[0]."_crew WHERE members<10"));
-            if($crewid_findFounder[1]==$userid[0]){
-                crewFounder($round[0], $crewid_findFounder[0], $userid[0], $userid[1]);
-                echo "$userid[1]";
-                
-            }else{
-                crewMember($round[0], $crewid_find[0], $userid[0]); 
-                
-            }
-            
+            joinGame($user[pimpname], $round[0], $user[username], $user[password], $user[code], $user[status], $reserves, $maxbuild, $city, $begins, $team, $flag);
+            //Bots Join the Crews
+            joinCrews($round[0]);
         }
-		
-		
+        
+        //Insert Admins to game
+        $get_user = mysql_query("SELECT status,code,username,subscribe,password,pimpname FROM `users` WHERE status='admin';");
+        while ($user = mysql_fetch_array($get_user)){
+            joinGame($user[pimpname], $round[0], $user[username], $user[password], $user[code], $user[status], $reserves, $maxbuild, 1, $begins, $team, $flag);;
+        }
+
+        
 		//Inserting Cities in
 		if($city1) { createCity($round[0], $city1); }
 		if($city2) { createCity($round[0], $city2); }
